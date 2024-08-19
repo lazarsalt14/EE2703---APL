@@ -32,3 +32,8 @@ $ git remote rm origin
 $ git commit -m "your commit"
 $ git remote add origin https://github.com/user/repo.git
 $ git push -f origin master
+
+git rm --cached file1.txt
+git commit -m "remove file1.txt" to delete a file
+
+does this get sent
