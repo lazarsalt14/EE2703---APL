@@ -1,0 +1,34 @@
+echo $? return 0 if all tests of unitest passes
+
+if __name__='__main__' what does this mean? \
+
+
+lscpu->  terminal that gives information on the systems cpu
+
+hd command learn how to use 
+what the end of line is in each operating system
+
+
+unsigned int, int, floating points and decimal part.
+
+floating point errors(you have to round off at the end of the float bit size)
+a number may not be representable in 32 bits.
+there are specific rounding off rules, and the order in which you implement them may matter.
+
+find out if list comprehension is better than normal appending
+
+timeit library, use it to benchmark your code.
+
+time is always averaged out, you dont run a code once.
+
+numpy library, most of it is just wrapped C code,  lists dont exist in numpy
+So sometimes numpy may be slower if not used properly
+
+
+
+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
+$ git remote -v
+$ git remote rm origin
+$ git commit -m "your commit"
+$ git remote add origin https://github.com/user/repo.git
+$ git push -f origin master
