@@ -424,4 +424,3 @@ def evalSpice(filename):
     return node_ans, current_ans
 
 
-print(evalSpice("test_7.txt"))
