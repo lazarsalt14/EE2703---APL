@@ -13,25 +13,24 @@ current through the voltage sources.
 
 import numpy as np
 
-
-def valid_filename(filename):
+def valid_filename(filename: str) -> None:
     """
-    Description: Checks if the file name is valid, returns error otherwise.
-    Input: filename(String)
-    Output: Returns 0 if file opens successfully, otherwise throws FileNotFoundError
+    Checks if the file name is valid by attempting to open it.
 
+    Args:
+        filename (str): The name of the file to check.
+
+    Raises:
+        FileNotFoundError: If the file cannot be found.
     """
-
     try:
-        f = open(filename, "r")
-        f.close()
-        return 0
-
+        with open(filename, "r") as f:
+            pass
     except FileNotFoundError:
         raise FileNotFoundError("Please give the name of a valid SPICE file as input")
 
 
-def valid_fileinput_checker(filename):
+def valid_fileinput_checker(filename: str)-> None:
     """
 
     Description: Checks to make sure if the file is not malformed (should contain '.circuit' and '.end')
@@ -53,15 +52,18 @@ def valid_fileinput_checker(filename):
     return 1
 
 
-def parser(filename):
+def parser(filename: str) -> tuple[dict, int]:
     """
-    Description: Parses the input text file, also checks if the elements are R, I or V.
-    Input: Filename (String)
-    Output: Adjacency list of the nodes and the components, stored as a dictionary with keys as the node and the
-    value as list of lists.
-    The lists comprising of the 'value' of the key value pair has 3 elements, the name of element, node it is
-    connected to, and the value of the circuit element.
+    Parses the SPICE file to create a node graph and count voltage sources.
 
+    Args:
+        filename (str): The path to the SPICE file.
+
+    Returns:
+        tuple[dict, int]: The node graph and the number of voltage sources.
+
+    Raises:
+        ValueError: If the file contains unknown components or is malformed.
     """
 
     # node_graph stores the adjacency list with the nodes and the nodes with which it is connected to, along with the circuit elements
@@ -91,13 +93,13 @@ def parser(filename):
 
         elif start and x:
             # processing the data
-            line = x.strip("\n").split(" ")
+            components = x.strip("\n").split(" ")
             i = 0
 
             # removing empty spaces that are extra in the input
-            for elem in line:
+            for elem in components:
                 if elem == "":
-                    line.pop(i)
+                    components.pop(i)
                 i = i + 1
 
             branch1 = []
@@ -105,63 +107,63 @@ def parser(filename):
             line_check = []
 
             # this ensures all the unnessary extra data is removed from the list (like stray comments)
-            for elem in line:
+            for elem in components:
                 if elem != "":
                     line_check.append(elem)
-            del line
+            del components
 
-            line = list(line_check)
+            components = list(line_check)
 
             # raising error if there are non V,I,R elements in the file
-            if line[0][0].upper() not in "RIV":
+            if components[0][0].upper() not in "RIV":
                 raise ValueError("Only V, I, R elements are permitted")
 
             # A resistor should have 4 arguments, the name, nodes it is connected to and the value, raises error if it doesnt have this
-            if line[0][0].upper() == "R":
+            if components[0][0].upper() == "R":
 
-                if len(line) < 4:
+                if len(components) < 4:
                     raise ValueError("Malformed circuit file")
 
-                line = list(line[0:4])
+                components = list(components[0:4])
 
             # a V or I source should have 5 arguments, the name, nodes it is connected to, dc or ac and the value, raises error if it doesnt have this
-            if line[0][0].upper() == "I" or line[0][0].upper() == "V":
+            if components[0][0].upper() == "I" or components[0][0].upper() == "V":
 
-                if len(line) < 5:
+                if len(components) < 5:
                     raise ValueError("Malformed circuit file")
 
-                line = list(line[0:5])
+                components = list(components[0:5])
 
             # branch1 and branch2 contains details on each of the circuit elements, they get added to the dictionary with its first and second node being the key respectively
-            branch2.append(line[0])
-            branch2.append(line[1])
-            branch2.append(line[-1])
+            branch2.append(components[0])
+            branch2.append(components[1])
+            branch2.append(components[-1])
 
-            if line[0][0].upper() == "V":
+            if components[0][0].upper() == "V":
                 pass
 
-                branch2[2] = -1 * float((line[-1]))
+                branch2[2] = -1 * float((components[-1]))
 
             # counting the number of voltage sources
-            if line[0][0].upper() == "V":
+            if components[0][0].upper() == "V":
                 voltage_sources += 1
 
-            branch1.append(line[0])
-            branch1.append(line[2])
-            branch1.append(line[-1])
+            branch1.append(components[0])
+            branch1.append(components[2])
+            branch1.append(components[-1])
 
-            if line[0][0].upper() == "I":
-                branch1[2] = -1 * float((line[-1]))
+            if components[0][0].upper() == "I":
+                branch1[2] = -1 * float((components[-1]))
 
             # initialising the dictionary
-            if line[1] not in node_graph.keys():
-                node_graph[line[1]] = []
+            if components[1] not in node_graph.keys():
+                node_graph[components[1]] = []
 
-            if line[2] not in node_graph.keys():
-                node_graph[line[2]] = []
+            if components[2] not in node_graph.keys():
+                node_graph[components[2]] = []
 
-            node_graph[line[1]].append(branch1)
-            node_graph[line[2]].append(branch2)
+            node_graph[components[1]].append(branch1)
+            node_graph[components[2]].append(branch2)
 
             x = f.readline()
         else:
@@ -174,14 +176,17 @@ def parser(filename):
     return node_graph, voltage_sources
 
 
-def valid_circuit(A):
+def valid_circuit(A: np.ndarray) -> bool:
     """
-    Description: Checks if the matrix is solvable, if not, it is not a valid circuit.
-    Input: The Nodal Equation matrix
-    Ouput: Returns 0 if the determinant is 0, 1 otherwise
+    Checks if the circuit is solvable based on the nodal equation matrix.
 
+    Args:
+        nodal_matrix (np.ndarray): The matrix representing the nodal equations.
+
+    Returns:
+        bool: True if the matrix is solvable (i.e., its rank is equal to its size), 
+              False otherwise.
     """
-
     # comparing ranks instead of finding determinant to avoid floating point errors
     if np.linalg.matrix_rank(A) < A.shape[0]:
         return 0
