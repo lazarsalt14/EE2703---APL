@@ -4,7 +4,7 @@ Name: Nishanth Senthil Kumar
 Roll No: EE23B049
 Date: 4th August 2024
 Description: Spice Circuit solver, solves circuits with resistors and independant voltage and current sources
-Input: filename (String)
+Input: filename (str)
 Output: 2 dictionaries, first one contains nodes as the keys and the node voltages as the values, and the second
 one contains current through the voltage sources, the key is name of the voltage source and the value is the 
 current through the voltage sources. 
@@ -12,6 +12,8 @@ current through the voltage sources.
 """
 
 import numpy as np
+from typing import Dict, Tuple
+
 
 def valid_filename(filename: str) -> None:
     """
@@ -30,12 +32,16 @@ def valid_filename(filename: str) -> None:
         raise FileNotFoundError("Please give the name of a valid SPICE file as input")
 
 
-def valid_fileinput_checker(filename: str)-> None:
+def valid_fileinput_checker(filename: str) -> None:
     """
 
-    Description: Checks to make sure if the file is not malformed (should contain '.circuit' and '.end')
-    Input: filename(String)
-    Output: Returns 0 if the file is invalid, returns 1 otherwise
+    Checks to make sure if the file is not malformed (should contain '.circuit' and '.end')
+
+    Args:
+        filename (str): The name of the file to check.
+
+    Returns:
+        0 if the file is invalid, returns 1 otherwise
 
     """
 
@@ -184,7 +190,7 @@ def valid_circuit(A: np.ndarray) -> bool:
         nodal_matrix (np.ndarray): The matrix representing the nodal equations.
 
     Returns:
-        bool: True if the matrix is solvable (i.e., its rank is equal to its size), 
+        bool: True if the matrix is solvable (i.e., its rank is equal to its size),
               False otherwise.
     """
     # comparing ranks instead of finding determinant to avoid floating point errors
@@ -194,8 +200,18 @@ def valid_circuit(A: np.ndarray) -> bool:
     return 1
 
 
-def evalSpice(filename):
+def evalSpice(filename: str) -> Tuple[Dict[str, float], Dict[str, float]]:
+    """
+    Evaluates the SPICE circuit file and solves for node voltages and currents through voltage sources.
 
+    Args:
+        filename (str): The path to the SPICE circuit file.
+
+    Returns:
+        Tuple[Dict[str, float], Dict[str, float]]:
+            - A dictionary with node names as keys and their voltages as values.
+            - A dictionary with voltage source names as keys and the currents through them as values.
+    """
     # checks if the filename is valid
     valid_filename(filename)
 
@@ -267,9 +283,7 @@ def evalSpice(filename):
         diagonal_conductance = 0
         for j in node_graph[node_mapping_list[i]]:
             if float(j[2]) == 0 and j[0][0].upper() == "R":
-                raise ValueError(
-                    "Resistance cant be equal to 0, Please check your input"
-                )
+                raise ValueError("Circuit error: no solution")
 
             elif j[0][0].upper() == "R" and float((j[2])) != 0:
                 diagonal_conductance += 1 / float((j[2]))
