@@ -1,1 +1,5 @@
-
+#non_nodal.ckt
+.circuit
+v1 1 gnd DC 8
+I1 1 GND DC 8
+.end

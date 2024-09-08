@@ -1,0 +1,7 @@
+#shorting.ckt
+.circuit
+v1 1 GND DC 2
+R1 1 2 3
+R2 2 GND 4
+V3 2 GND dc 0
+.end

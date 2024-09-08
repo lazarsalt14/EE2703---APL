@@ -1,0 +1,8 @@
+#no_gnd.ckt
+.circuit
+v1 1 4 dc 24 
+v2 3 4 dc 15 
+r1 1 2 1000
+r2 2 3 8100 
+r3 2 4 4700 
+.end

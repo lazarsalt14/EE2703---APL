@@ -1,0 +1,5 @@
+#zero_resistance.ckt
+.circuit
+R1 1 GND 0
+V1 1 GND DC 10
+.end

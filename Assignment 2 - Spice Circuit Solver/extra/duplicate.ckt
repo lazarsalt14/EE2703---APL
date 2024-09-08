@@ -1,0 +1,9 @@
+#duplicate.ckt
+.circuit
+V1 1 GND DC 10
+R1 1 2 10
+R1 2 GND 10
+V2 2 GND DC 10
+
+
+.end

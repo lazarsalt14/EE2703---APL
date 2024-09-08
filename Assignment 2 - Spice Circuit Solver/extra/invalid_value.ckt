@@ -1,0 +1,5 @@
+#invalid_value.ckt
+.circuit
+R1 GND 1 10
+V1 GND 1 dc J
+.end
