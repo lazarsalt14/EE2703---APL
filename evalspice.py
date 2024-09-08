@@ -4,7 +4,7 @@ Name: Nishanth Senthil Kumar
 Roll No: EE23B049
 Date: 4th August 2024
 Description: Spice Circuit solver, solves circuits with resistors and independant voltage and current sources
-Input: filename (str)
+Input: filename (String)
 Output: 2 dictionaries, first one contains nodes as the keys and the node voltages as the values, and the second
 one contains current through the voltage sources, the key is name of the voltage source and the value is the 
 current through the voltage sources. 
@@ -28,6 +28,7 @@ def valid_filename(filename: str) -> None:
     try:
         with open(filename, "r") as f:
             pass
+
     except FileNotFoundError:
         raise FileNotFoundError("Please give the name of a valid SPICE file as input")
 
@@ -84,7 +85,7 @@ def parser(filename: str) -> tuple[dict, int]:
 
     # start is a boolean which checks if '.circuit' has been reached by f.readline(), parsing starts when it start becomes True
     start = False
-
+    circuit_elements = []
     while ".end" not in x:
         x = x.strip("\n")
 
@@ -141,35 +142,40 @@ def parser(filename: str) -> tuple[dict, int]:
                 components = list(components[0:5])
 
             # branch1 and branch2 contains details on each of the circuit elements, they get added to the dictionary with its first and second node being the key respectively
-            branch2.append(components[0])
-            branch2.append(components[1])
-            branch2.append(components[-1])
+            circuit_elements.append(components[0])
+            try:
+                branch2.append(components[0])
+                branch2.append(components[1])
+                branch2.append(float(components[-1]))
+                if components[0][0].upper() == "V":
+                    pass
 
-            if components[0][0].upper() == "V":
-                pass
+                    branch2[2] = -1 * float((components[-1]))
 
-                branch2[2] = -1 * float((components[-1]))
+                # counting the number of voltage sources
+                if components[0][0].upper() == "V":
+                    voltage_sources += 1
 
-            # counting the number of voltage sources
-            if components[0][0].upper() == "V":
-                voltage_sources += 1
+                branch1.append(components[0])
+                branch1.append(components[2])
+                branch1.append(float(components[-1]))
 
-            branch1.append(components[0])
-            branch1.append(components[2])
-            branch1.append(components[-1])
+                if components[0][0].upper() == "I":
+                    branch1[2] = -1 * float((components[-1]))
 
-            if components[0][0].upper() == "I":
-                branch1[2] = -1 * float((components[-1]))
+                # initialising the dictionary
+                if components[1] not in node_graph.keys():
+                    node_graph[components[1]] = []
 
-            # initialising the dictionary
-            if components[1] not in node_graph.keys():
-                node_graph[components[1]] = []
+                if components[2] not in node_graph.keys():
+                    node_graph[components[2]] = []
 
-            if components[2] not in node_graph.keys():
-                node_graph[components[2]] = []
+                node_graph[components[1]].append(branch1)
+                node_graph[components[2]].append(branch2)
 
-            node_graph[components[1]].append(branch1)
-            node_graph[components[2]].append(branch2)
+            # checks if the last element is float or int.
+            except ValueError:
+                raise ValueError("Malformed circuit file")
 
             x = f.readline()
         else:
@@ -177,6 +183,10 @@ def parser(filename: str) -> tuple[dict, int]:
 
     # closing the file
     f.close()
+
+    # checks if all the circuit elements are unique
+    if len(circuit_elements) != len(set(circuit_elements)):
+        raise ValueError("Malformed Circuit File")
 
     # returning the adjacency list and number of voltage sources
     return node_graph, voltage_sources
@@ -338,13 +348,15 @@ def evalSpice(filename: str) -> Tuple[Dict[str, float], Dict[str, float]]:
 
                 j[0] = "R"
                 k += 1
+    negative_bool = False
 
     # this checks the polarity of the voltage source, if positive terminal is connected to GND, 'True' is appended
     # This 'True' flag is used later to multiply a factor of -1
     for i in node_graph_2:
         for j in node_graph_2[i]:
-            if float(j[2]) < 0 and j[1].upper() == "GND":
+            if float(j[2]) < 0 and j[1].upper() == "GND" and j[0][0].upper == "V":
                 j.append("True")
+                negative_bool = True
 
     # C is the transpose of B if only independant sources are present in the circuit
     C = np.zeros((voltage_sources, unsolved_nodes))
@@ -377,6 +389,7 @@ def evalSpice(filename: str) -> Tuple[Dict[str, float], Dict[str, float]]:
     I = np.zeros((unsolved_nodes, 1))
 
     # sorting it so that it can be mapped easily
+
     current_at_nodes = {key: current_at_nodes[key] for key in sorted(current_at_nodes)}
     for i in current_at_nodes:
         I[node_back_mapping_list[i]][0] = float(current_at_nodes[i])
@@ -390,7 +403,7 @@ def evalSpice(filename: str) -> Tuple[Dict[str, float], Dict[str, float]]:
         for j in node_graph_2[i]:
 
             if j[0][0].upper() == "V":
-                if j[-1] == "True":
+                if j[-1] == "True" or not negative_bool:
                     E[k][0] = abs(float((j[2])))
 
                 else:
@@ -404,7 +417,7 @@ def evalSpice(filename: str) -> Tuple[Dict[str, float], Dict[str, float]]:
 
     # Z is the RHS matrix,
     Z = np.vstack((I, E))
-
+    # Z[-1]*=-1
     # checking for invalid circuit conditions, and throws an error is it is invalid
     valid_matrix = valid_circuit(A)
 
@@ -436,5 +449,3 @@ def evalSpice(filename: str) -> Tuple[Dict[str, float], Dict[str, float]]:
 
     # returning the answer
     return node_ans, current_ans
-
-
